@@ -2,20 +2,22 @@ from django.db import models
 from job_app.model.skill import Skill
 from ..model.base import Base
 from .users import User
-                    
+from .category import Category
+from .location import Location
+
 class Job(Base):
-    ''' Model Fields '''
-            
-    title = models.CharField(unique=False, null=True, blank=True, max_length=255, db_index=True)
+    title = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     description = models.TextField(null=True, blank=True)
-    category = models.CharField(unique=False, null=True, blank=True, max_length=100, db_index=True)
-    skills = models.TextField(null=True, blank=True, help_text='Comma-separated list of skills')
-    location = models.CharField(unique=False, null=True, blank=True, max_length=255, db_index=True)
-    posted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs', null=True, blank=True)
     
-    STATUS_BY = ((1, 'active'),(2, 'inactive'),(3, 'deleted'),)
-    status = models.IntegerField(choices=STATUS_BY, default=1)
+    # Foreign keys instead of CharField
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, null=True, blank=True)
+    location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=True)
+    
+    posted_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posted_jobs', null=True, blank=True)
     skills = models.ManyToManyField(Skill, blank=True)
+    
+    STATUS_BY = ((1, 'active'), (2, 'inactive'), (3, 'deleted'))
+    status = models.IntegerField(choices=STATUS_BY, default=1)
     
     class Meta:
         db_table = 'job'

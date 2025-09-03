@@ -74,3 +74,17 @@ urlpatterns += [
     #Skill endpoints
     path('skill/', SkillView.as_view({'get': 'list', 'post': 'create'}), name='skill-list-create'),
 ]
+
+# Category endpoints
+from job_app.views.category import CategoryView
+urlpatterns += [
+    path('category/', CategoryView.as_view({'post': 'create', 'get': 'list'})),
+    path('category/<int:id>/', CategoryView.as_view({'delete': 'delete'})),
+]
+
+# Location endpoints
+from job_app.views.location import LocationView
+urlpatterns += [
+    path('location/', LocationView.as_view({'post': 'create', })),
+    path('location/<int:id>/', LocationView.as_view({'delete': 'delete'})),
+]

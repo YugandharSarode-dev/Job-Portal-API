@@ -24,22 +24,23 @@ class ApplicationView(MultipleFieldPKModelMixin, CreateRetrieveUpdateViewSet, Ap
     permission_classes = [IsAuthenticated]
     search_fields = ['job__title', 'status']
 
-    def get_object(self):
-        """Get single application of logged-in user"""
-        try:
-            pk = self.kwargs.get('id')
-            return self.model_class.filter(pk=pk, applicant=self.request.user).first()
-        except:
-            return None
-
     @transaction.atomic()
     def create(self, request, *args, **kwargs):
         """Apply for a Job"""
         sp1 = transaction.savepoint()
         try:
             req_data = request.data.copy()
-            # Force applicant to be logged-in user
             req_data['applicant'] = request.user.id
+
+            uploaded_file = request.FILES.get('resume')
+            if not uploaded_file:
+                return ApiResponse.response_bad_request(self, message=["Document is required"])
+            
+            if uploaded_file.content_type != 'application/pdf':
+                return ApiResponse.response_bad_request(self, message=["Document must be a PDF"])
+            
+            if uploaded_file.size > 100 * 1024:
+                return ApiResponse.response_bad_request(self, message=["Document size must be less than 100 KB"])
 
             serializer = self.serializer_class(data=req_data)
             if serializer.is_valid():
@@ -58,6 +59,8 @@ class ApplicationView(MultipleFieldPKModelMixin, CreateRetrieveUpdateViewSet, Ap
         except Exception as e:
             transaction.savepoint_rollback(sp1)
             return ApiResponse.response_internal_server_error(self, message=[str(e)])
+
+
 
     @transaction.atomic()
     def update(self, request, *args, **kwargs):

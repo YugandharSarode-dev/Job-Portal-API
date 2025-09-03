@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 
 # Utilities
+from job_app.model.skill import Skill
 from utility.response import ApiResponse
 from utility.utils import (
     MultipleFieldPKModelMixin,
@@ -46,13 +47,20 @@ class JobView(MultipleFieldPKModelMixin, CreateRetrieveUpdateViewSet, ApiRespons
         except Exception as e:
             return ApiResponse.response_internal_server_error(self, message=[str(e)])
 
-    @transaction.atomic()
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Employer can create a Job"""
         sp1 = transaction.savepoint()
         try:
             req_data = request.data.copy()
             req_data['posted_by'] = request.user.id
+
+            skill_ids = req_data.get("skills", [])
+            if skill_ids and not Skill.objects.filter(id__in=skill_ids).count() == len(skill_ids):
+                return ApiResponse.response_bad_request(self, message="Invalid skill id")
+
+            if not req_data.get("title") or not req_data["title"].strip():
+                return ApiResponse.response_bad_request(self, message=["Title cannot be empty"])
 
             serializer = self.serializer_class(data=req_data)
             if serializer.is_valid():
